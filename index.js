@@ -37,15 +37,30 @@ async function run() {
         // Delete Product
         app.delete('/product/:id', async (req, res) => {
             const id = req.params.id;
-            const query = {_id: ObjectId(id)}
+            const query = { _id: ObjectId(id) }
             const result = await productsCollection.deleteOne(query);
             res.send(result);
         });
 
         // Post Product
-        app.post('/product', async (req, res)=>{
+        app.post('/product', async (req, res) => {
             const addNewProduct = req.body;
             const result = await productsCollection.insertOne(addNewProduct);
+            res.send(result);
+        });
+
+        // Upadate Product
+        app.put('/product/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id)}
+            const options = { upsert: true };
+            const updatedQuantity = {
+                $set:{
+                    quantity: req.body.quantity,
+                }
+            };
+
+            const result = await productsCollection.updateOne(filter, updatedQuantity, options);
             res.send(result);
         })
 
