@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const jsonwebtoken = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config()
 
@@ -45,26 +46,55 @@ async function run() {
         // Post Product
         app.post('/product', async (req, res) => {
             const addNewProduct = req.body;
+            addNewProduct.quantity = parseInt(addNewProduct.quantity)
             const result = await productsCollection.insertOne(addNewProduct);
             res.send(result);
         });
 
         // Upadate Product
-        app.put('/product/:id', async (req, res) => {
+        app.put("/product/increase/:id", async (req, res) => {
             const id = req.params.id;
-            const filter = { _id: ObjectId(id)}
-            const options = { upsert: true };
-            const updatedQuantity = {
-                $set:{
-                    quantity: req.body.quantity,
-                }
-            };
+            const quantity = parseInt(req.body.quantity);
+            const query = { _id: ObjectId(id) };
+            const products = await productsCollection.findOne(query);
+            const newQuantity = quantity + products.quantity;
+            const updateProduct = await productsCollection.updateOne(query, {
+              $set: { quantity: newQuantity },
+            });
+      
+            res.send(updateProduct);
+          });
+      
+          app.put("/product/decrease/:id", async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const product = await productsCollection.updateOne(query, {
+              $inc: { quantity: -1 },
+            });
+      
+            res.send(product);
+          });
+        // handlle delivery
 
-            const result = await productsCollection.updateOne(filter, updatedQuantity, options);
-            res.send(result);
+        // app.put("/product/:id", async (req, res) => {
+        //     const id = req.params.id;
+        //     const query = { _id: ObjectId(id) };
+        //     const inventory = await productsCollection.updateOne(query, {
+        //         $inc: { quantity: -1 },
+        //     });
+
+        //     res.send(inventory);
+        // });
+
+        // JWT
+
+        app.post('/login', async (req, res) => {
+            const user = req.body;
+            const token = jsonwebtoken.sign(user, process.env.ACCESS_TOKEN, {
+                expiresIn: '1d'
+            });
+            res.send({ token })
         })
-
-
     }
     finally {
 
