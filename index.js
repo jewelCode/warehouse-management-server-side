@@ -21,14 +21,14 @@ async function run() {
     try {
         await client.connect();
         const productsCollection = client.db("warehouseInventoryManagement").collection("products");
-
+        // add Product
         app.get("/product", async (req, res) => {
             const query = {};
             const cursor = productsCollection.find(query);
             const products = await cursor.toArray();
             res.send(products);
         })
-
+        // Load Prodcut from database
         app.get("/product/:id", async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
@@ -52,41 +52,31 @@ async function run() {
         });
 
         // Upadate Product
-        app.put("/product/increase/:id", async (req, res) => {
+        app.put("/product/addproduct/:id", async (req, res) => {
             const id = req.params.id;
             const quantity = parseInt(req.body.quantity);
             const query = { _id: ObjectId(id) };
             const products = await productsCollection.findOne(query);
             const newQuantity = quantity + products.quantity;
             const updateProduct = await productsCollection.updateOne(query, {
-              $set: { quantity: newQuantity },
+                $set: { quantity: newQuantity },
             });
-      
+
             res.send(updateProduct);
-          });
-      
-          app.put("/product/decrease/:id", async (req, res) => {
+        });
+
+        // handle Delivery
+        app.put("/product/delivery/:id", async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
             const product = await productsCollection.updateOne(query, {
-              $inc: { quantity: -1 },
+                $inc: { quantity: -1 },
             });
-      
+
             res.send(product);
-          });
-        // handlle delivery
+        });
 
-        // app.put("/product/:id", async (req, res) => {
-        //     const id = req.params.id;
-        //     const query = { _id: ObjectId(id) };
-        //     const inventory = await productsCollection.updateOne(query, {
-        //         $inc: { quantity: -1 },
-        //     });
-
-        //     res.send(inventory);
-        // });
-
-        // JWT
+        // JWT token Access
 
         app.post('/login', async (req, res) => {
             const user = req.body;
@@ -94,6 +84,16 @@ async function run() {
                 expiresIn: '1d'
             });
             res.send({ token })
+        })
+
+        // My Items
+
+        app.get('/myitems', async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email };
+            const cursor = productsCollection.find(query);
+            const myitems = await cursor.toArray();
+            res.send(myitems);
         })
     }
     finally {
